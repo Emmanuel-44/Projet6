@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\CategoryRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -23,9 +25,14 @@ class Category
     private $name;
 
     /**
-     * @ORM\OneToOne(targetEntity=Trick::class, mappedBy="category", cascade={"persist", "remove"})
+     * @ORM\OneToMany(targetEntity=Trick::class, mappedBy="category", orphanRemoval=true)
      */
-    private $trick;
+    private $tricks;
+
+    public function __construct()
+    {
+        $this->tricks = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -44,19 +51,32 @@ class Category
         return $this;
     }
 
-    public function getTrick(): ?Trick
+    /**
+     * @return Collection|Trick[]
+     */
+    public function getTricks(): Collection
     {
-        return $this->trick;
+        return $this->tricks;
     }
 
-    public function setTrick(Trick $trick): self
+    public function addTrick(Trick $trick): self
     {
-        // set the owning side of the relation if necessary
-        if ($trick->getCategory() !== $this) {
+        if (!$this->tricks->contains($trick)) {
+            $this->tricks[] = $trick;
             $trick->setCategory($this);
         }
 
-        $this->trick = $trick;
+        return $this;
+    }
+
+    public function removeTrick(Trick $trick): self
+    {
+        if ($this->tricks->removeElement($trick)) {
+            // set the owning side to null (unless already changed)
+            if ($trick->getCategory() === $this) {
+                $trick->setCategory(null);
+            }
+        }
 
         return $this;
     }
